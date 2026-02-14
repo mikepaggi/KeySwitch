@@ -9,6 +9,9 @@ hidapi = "2.6"
 log = "0.4"
 env_logger = { version = "0.11", default-features = false }
 
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.29", default-features = false, features = ["process", "fs"] }
+
 [[bin]]
 name = "keyswitch"
 path = "src/main.rs"

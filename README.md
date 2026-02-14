@@ -11,8 +11,10 @@ Requires a Keychron keyboard with QMK/VIA firmware (Raw HID). See [docs/README.m
 
 ```bash
 cargo build --release
-# Run (foreground):
+# Run in foreground (for testing; keeps terminal open):
 RUST_LOG=info ./target/release/keyswitch
+# Run in background (detaches; no terminal needed):
+./target/release/keyswitch --daemon
 ```
 
 ## License

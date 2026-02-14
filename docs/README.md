@@ -18,8 +18,9 @@ Binaries:
 
 ## Running
 
-- **macOS**: Runs in the foreground; when a Keychron Raw HID device is detected (or reconnects after a KVM switch), it sets the keyboard layout to **Mac**. Set `RUST_LOG=info` to see log lines (e.g. “Set Keychron … to Mac layout”).
+- **Foreground (default)**: Runs in the foreground; when a Keychron Raw HID device is detected (or reconnects after a KVM switch), it sets the keyboard layout to **Mac**. Set `RUST_LOG=info` to see log lines (e.g. “Set Keychron … to Mac layout”).
 - **Windows**: Same behavior; layout is set to **Windows**.
+- **Background**: Run with `--daemon` or `-d` to detach: on macOS the process double-forks and logs to `/tmp/keyswitch.log` and `/tmp/keyswitch.err.log`; on Windows it spawns a no-console process and the original exits.
 
 The daemon polls every 2 seconds for connected Keychron Raw HID devices and applies the layout only to devices that have not been configured in the current run (so it does not spam the keyboard).
 
@@ -54,7 +55,7 @@ Logs (if you kept the plist’s `StandardOutPath` / `StandardErrorPath`): `/tmp/
 
 ### Windows (run at logon)
 
-- Create a shortcut to `keyswitch.exe` in the **Startup** folder (`shell:startup`), or use Task Scheduler to run `keyswitch.exe` at user logon. Run it in the background (no console window needed).
+- Create a shortcut to `keyswitch.exe` in the **Startup** folder (`shell:startup`), or use Task Scheduler to run `keyswitch.exe` at user logon. To avoid a console window, either run `keyswitch.exe --daemon` (e.g. from a shortcut that runs that command) or use Task Scheduler / a shortcut that runs the exe in the background.
 
 ## Finding VID/PID
 
