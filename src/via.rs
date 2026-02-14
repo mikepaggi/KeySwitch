@@ -6,12 +6,14 @@ const COMMAND_START: u8 = 0x00;
 
 // VIA command IDs (from qmk_firmware quantum/via.h)
 const ID_SET_KEYBOARD_VALUE: u8 = 0x03;
+#[allow(dead_code)]
 const ID_GET_KEYBOARD_VALUE: u8 = 0x02;
 const ID_LAYOUT_OPTIONS: u8 = 0x02;
 
 /// Layout option value: 0 = Windows, 1 = Mac (Keychron convention).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Layout {
+    #[allow(dead_code)]
     Windows = 0,
     Mac = 1,
 }
@@ -33,6 +35,7 @@ pub fn set_layout_options_report(layout: Layout) -> [u8; RAW_EPSIZE] {
 }
 
 /// Builds the 32-byte Raw HID report to get layout options (for discovery/debug).
+#[allow(dead_code)]
 pub fn get_layout_options_report() -> [u8; RAW_EPSIZE] {
     let mut report = [0u8; RAW_EPSIZE];
     report[0] = COMMAND_START;

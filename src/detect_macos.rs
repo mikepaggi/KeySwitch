@@ -4,7 +4,6 @@
 use hidapi::HidApi;
 use log::debug;
 use std::collections::HashSet;
-use std::time::Duration;
 
 use crate::keychron::{apply_to_connected_keychrons, poll_interval};
 use crate::via::Layout;

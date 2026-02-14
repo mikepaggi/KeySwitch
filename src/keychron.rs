@@ -35,7 +35,7 @@ pub fn send_layout_to_device(
     }
     // Read back response (VIA echoes the buffer).
     let mut buf = [0u8; 32];
-    device.set_blocking_mode(true);
+    let _ = device.set_blocking_mode(true);
     let _ = device.read_timeout(&mut buf[..], 500);
     Ok(())
 }
