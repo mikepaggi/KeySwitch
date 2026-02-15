@@ -13,11 +13,15 @@ mod detect_windows;
 use hidapi::HidApi;
 use log::info;
 
+/// Returns true if the given args request daemon mode (--daemon or -d).
+pub(crate) fn want_daemon(args: &[String]) -> bool {
+    args.iter().any(|a| a == "--daemon" || a == "-d")
+}
+
 /// If --daemon or -d was passed, detach and run in background (Unix) or spawn a no-window process (Windows).
 fn maybe_daemonize() {
     let args: Vec<String> = std::env::args().collect();
-    let want_daemon = args.iter().any(|a| a == "--daemon" || a == "-d");
-    if !want_daemon {
+    if !want_daemon(&args) {
         return;
     }
 
@@ -159,5 +163,20 @@ fn main() {
     {
         log::error!("Unsupported OS; KeySwitch supports macOS and Windows only.");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::want_daemon;
+
+    #[test]
+    fn test_want_daemon() {
+        assert!(!want_daemon(&[]));
+        assert!(!want_daemon(&["keyswitch".into()]));
+        assert!(want_daemon(&["keyswitch".into(), "--daemon".into()]));
+        assert!(want_daemon(&["keyswitch".into(), "-d".into()]));
+        assert!(want_daemon(&["/path/to/keyswitch".into(), "-d".into()]));
+        assert!(!want_daemon(&["keyswitch".into(), "--other".into()]));
     }
 }

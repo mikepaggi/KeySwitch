@@ -14,7 +14,7 @@ pub const KEYCHRON_VID: u16 = 0x3434;
 pub const RAW_HID_USAGE_PAGE: u16 = 0xFF60;
 
 /// Unique key for a device (for tracking already-applied devices).
-fn device_key(vid: u16, pid: u16, serial: Option<&str>) -> String {
+pub(crate) fn device_key(vid: u16, pid: u16, serial: Option<&str>) -> String {
     format!(
         "{:04x}:{:04x}:{}",
         vid,
@@ -101,4 +101,37 @@ pub fn apply_to_connected_keychrons(
 /// Poll interval for device detection.
 pub fn poll_interval() -> Duration {
     Duration::from_secs(2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_device_key_format() {
+        assert_eq!(device_key(0x3434, 0x1234, None), "3434:1234:");
+        assert_eq!(device_key(0x3434, 0x1234, Some("ABC")), "3434:1234:ABC");
+        assert_eq!(device_key(0x0001, 0x0002, Some("")), "0001:0002:");
+    }
+
+    #[test]
+    fn test_device_key_keychron_vid() {
+        assert!(device_key(KEYCHRON_VID, 0x1234, None).starts_with("3434:"));
+    }
+
+    #[test]
+    fn test_poll_interval() {
+        let d = poll_interval();
+        assert_eq!(d.as_secs(), 2);
+    }
+
+    #[test]
+    fn test_send_layout_uses_via_report() {
+        let report = crate::via::set_layout_options_report(crate::via::Layout::Mac);
+        assert_eq!(report.len(), crate::via::RAW_EPSIZE);
+        assert_eq!(report[0], 0x00);
+        assert_eq!(report[1], 0x03);
+        assert_eq!(report[2], 0x02);
+        assert_eq!(report[6], 1);
+    }
 }

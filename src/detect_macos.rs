@@ -9,7 +9,7 @@ use crate::keychron::{apply_to_connected_keychrons, poll_interval};
 use crate::via::Layout;
 
 /// Determines layout for this OS: on macOS we set Mac layout.
-fn target_layout() -> Layout {
+pub(crate) fn target_layout() -> Layout {
     Layout::Mac
 }
 
@@ -24,5 +24,15 @@ pub fn run(api: &mut HidApi) -> ! {
         apply_to_connected_keychrons(api, layout, &mut applied_paths);
         debug!("Poll: {} Keychron device(s) with layout applied", applied_paths.len());
         std::thread::sleep(interval);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_target_layout_is_mac() {
+        assert_eq!(target_layout(), Layout::Mac);
     }
 }

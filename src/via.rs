@@ -62,4 +62,37 @@ mod tests {
         let r = set_layout_options_report(Layout::Windows);
         assert_eq!(r[6], 0);
     }
+
+    #[test]
+    fn test_set_layout_report_full_buffer() {
+        let r = set_layout_options_report(Layout::Mac);
+        assert_eq!(r.len(), RAW_EPSIZE);
+        // Big-endian 32-bit value 1: bytes 3..=6
+        assert_eq!(r[3], 0);
+        assert_eq!(r[4], 0);
+        assert_eq!(r[5], 0);
+        assert_eq!(r[6], 1);
+        // Rest of buffer must be zero
+        for i in 7..RAW_EPSIZE {
+            assert_eq!(r[i], 0, "byte {} should be 0", i);
+        }
+    }
+
+    #[test]
+    fn test_get_layout_options_report() {
+        let r = get_layout_options_report();
+        assert_eq!(r.len(), RAW_EPSIZE);
+        assert_eq!(r[0], COMMAND_START);
+        assert_eq!(r[1], ID_GET_KEYBOARD_VALUE);
+        assert_eq!(r[2], ID_LAYOUT_OPTIONS);
+        for i in 3..RAW_EPSIZE {
+            assert_eq!(r[i], 0);
+        }
+    }
+
+    #[test]
+    fn test_layout_enum_values() {
+        assert_eq!(Layout::Windows as u32, 0);
+        assert_eq!(Layout::Mac as u32, 1);
+    }
 }
