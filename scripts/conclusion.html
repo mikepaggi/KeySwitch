@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #28a745;
+        }
+        p {
+            margin-bottom: 12px;
+        }
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: "SF Mono", Monaco, Menlo, monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>✓ Installation Complete</h1>
+    <p>KeySwitch has been successfully installed!</p>
+
+    <p><strong>What happens next:</strong></p>
+    <ul>
+        <li>The KeySwitch daemon will start automatically on your next login</li>
+        <li>It will run silently in the background</li>
+        <li>Your Keychron keyboard will automatically switch to Mac mode when connected</li>
+    </ul>
+
+    <p><strong>To start the daemon now without restarting:</strong></p>
+    <p>Open Terminal and run:<br>
+    <code>launchctl load -w ~/Library/LaunchAgents/com.keyswitch.daemon.plist</code></p>
+
+    <p><strong>To check if it's running:</strong></p>
+    <p><code>launchctl list | grep keyswitch</code></p>
+
+    <p><strong>To view logs:</strong></p>
+    <p><code>tail -f /tmp/keyswitch.log</code></p>
+
+    <p><strong>To uninstall:</strong></p>
+    <p><code>launchctl unload ~/Library/LaunchAgents/com.keyswitch.daemon.plist</code><br>
+    <code>sudo rm /usr/local/bin/keyswitch</code><br>
+    <code>rm ~/Library/LaunchAgents/com.keyswitch.daemon.plist</code></p>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>KeySwitch</title>
+    <organization>com.keyswitch</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" rootVolumeOnly="true" />
+
+    <welcome file="welcome.html" mime-type="text/html" />
+    <conclusion file="conclusion.html" mime-type="text/html" />
+
+    <pkg-ref id="com.keyswitch.daemon">
+        <bundle-version/>
+    </pkg-ref>
+
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.keyswitch.daemon"/>
+        </line>
+    </choices-outline>
+
+    <choice id="default"/>
+    <choice id="com.keyswitch.daemon" visible="false">
+        <pkg-ref id="com.keyswitch.daemon"/>
+    </choice>
+
+    <pkg-ref id="com.keyswitch.daemon" version="0" onConclusion="none">KeySwitch-component.pkg</pkg-ref>
+</installer-gui-script>

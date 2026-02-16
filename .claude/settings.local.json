@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(./scripts/build-mac-installer-simple.sh:*)"
+    ]
+  }
+}
