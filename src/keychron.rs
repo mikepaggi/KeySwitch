@@ -5,7 +5,7 @@ use log::{info, warn};
 use std::collections::HashSet;
 use std::time::Duration;
 
-use crate::via::{set_layout_options_report, Layout};
+use crate::via::{parse_layout_options_response, set_layout_options_report, Layout};
 
 /// Keychron USB vendor ID (from usb-ids / Keychron).
 pub const KEYCHRON_VID: u16 = 0x3434;
@@ -24,20 +24,25 @@ pub(crate) fn device_key(vid: u16, pid: u16, serial: Option<&str>) -> String {
 }
 
 /// Sends the SetKeyboardValue(LayoutOptions) command to the open HID device.
+/// VIA echoes the report back verbatim, so we parse the echo as confirmation.
+/// Returns the layout the keyboard echoed back, or None if there was no echo.
 pub fn send_layout_to_device(
     device: &hidapi::HidDevice,
     layout: Layout,
-) -> Result<(), String> {
+) -> Result<Option<Layout>, String> {
     let report = set_layout_options_report(layout);
     let written = device.write(&report).map_err(|e| e.to_string())?;
     if written != report.len() {
         return Err(format!("wrote {} bytes, expected {}", written, report.len()));
     }
-    // Read back response (VIA echoes the buffer).
-    let mut buf = [0u8; 32];
+    // VIA echoes the SET report back verbatim. Byte 6 of the echo contains
+    // the layout value we sent, which confirms the keyboard received the command.
+    let mut echo = [0u8; 32];
     let _ = device.set_blocking_mode(true);
-    let _ = device.read_timeout(&mut buf[..], 500);
-    Ok(())
+    match device.read_timeout(&mut echo, 500) {
+        Ok(n) if n > 0 => Ok(parse_layout_options_response(&echo)),
+        _ => Ok(None),
+    }
 }
 
 /// Applies the given layout to all currently connected Keychron Raw HID devices
@@ -77,9 +82,28 @@ pub fn apply_to_connected_keychrons(
         match device_info.open_device(api) {
             Ok(device) => {
                 match send_layout_to_device(&device, layout) {
-                    Ok(()) => {
+                    Ok(Some(confirmed)) if confirmed == layout => {
                         info!(
-                            "Set Keychron {:04x}:{:04x} to {:?} layout",
+                            "Set Keychron {:04x}:{:04x} to {:?} layout (confirmed by keyboard)",
+                            device_info.vendor_id(),
+                            device_info.product_id(),
+                            layout
+                        );
+                        applied_keys.insert(key);
+                    }
+                    Ok(Some(other)) => {
+                        warn!(
+                            "Layout mismatch on {:04x}:{:04x}: sent {:?}, keyboard reports {:?}",
+                            device_info.vendor_id(),
+                            device_info.product_id(),
+                            layout,
+                            other
+                        );
+                        applied_keys.insert(key);
+                    }
+                    Ok(None) => {
+                        info!(
+                            "Set Keychron {:04x}:{:04x} to {:?} layout (no readback from keyboard)",
                             device_info.vendor_id(),
                             device_info.product_id(),
                             layout

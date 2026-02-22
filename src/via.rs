@@ -6,8 +6,6 @@ const COMMAND_START: u8 = 0x00;
 
 // VIA command IDs (from qmk_firmware quantum/via.h)
 const ID_SET_KEYBOARD_VALUE: u8 = 0x03;
-#[allow(dead_code)]
-const ID_GET_KEYBOARD_VALUE: u8 = 0x02;
 const ID_LAYOUT_OPTIONS: u8 = 0x02;
 
 /// Layout option value: 0 = Windows, 1 = Mac (Keychron convention).
@@ -34,14 +32,15 @@ pub fn set_layout_options_report(layout: Layout) -> [u8; RAW_EPSIZE] {
     report
 }
 
-/// Builds the 32-byte Raw HID report to get layout options (for discovery/debug).
-#[allow(dead_code)]
-pub fn get_layout_options_report() -> [u8; RAW_EPSIZE] {
-    let mut report = [0u8; RAW_EPSIZE];
-    report[0] = COMMAND_START;
-    report[1] = ID_GET_KEYBOARD_VALUE;
-    report[2] = ID_LAYOUT_OPTIONS;
-    report
+/// Parses a VIA echo or GET_KEYBOARD_VALUE(LayoutOptions) response from the keyboard.
+/// Byte 6 of the response contains the current layout: 0 = Windows, 1 = Mac.
+/// Returns None if the byte is unrecognised.
+pub fn parse_layout_options_response(buf: &[u8; RAW_EPSIZE]) -> Option<Layout> {
+    match buf[6] {
+        0 => Some(Layout::Windows),
+        1 => Some(Layout::Mac),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -79,20 +78,22 @@ mod tests {
     }
 
     #[test]
-    fn test_get_layout_options_report() {
-        let r = get_layout_options_report();
-        assert_eq!(r.len(), RAW_EPSIZE);
-        assert_eq!(r[0], COMMAND_START);
-        assert_eq!(r[1], ID_GET_KEYBOARD_VALUE);
-        assert_eq!(r[2], ID_LAYOUT_OPTIONS);
-        for i in 3..RAW_EPSIZE {
-            assert_eq!(r[i], 0);
-        }
-    }
-
-    #[test]
     fn test_layout_enum_values() {
         assert_eq!(Layout::Windows as u32, 0);
         assert_eq!(Layout::Mac as u32, 1);
+    }
+
+    #[test]
+    fn test_parse_layout_options_response() {
+        let mut buf = [0u8; RAW_EPSIZE];
+
+        buf[6] = 0;
+        assert_eq!(parse_layout_options_response(&buf), Some(Layout::Windows));
+
+        buf[6] = 1;
+        assert_eq!(parse_layout_options_response(&buf), Some(Layout::Mac));
+
+        buf[6] = 2;
+        assert_eq!(parse_layout_options_response(&buf), None);
     }
 }

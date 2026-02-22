@@ -18,6 +18,23 @@ pub(crate) fn want_daemon(args: &[String]) -> bool {
     args.iter().any(|a| a == "--daemon" || a == "-d")
 }
 
+/// Parses an optional `--layout mac|windows` override from args.
+/// When present, this overrides the compile-time OS default — useful for
+/// testing Windows layout on a Mac without a VM.
+pub(crate) fn parse_layout_override(args: &[String]) -> Option<via::Layout> {
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        if arg == "--layout" {
+            match iter.next().map(|s| s.as_str()) {
+                Some("mac") => return Some(via::Layout::Mac),
+                Some("windows") => return Some(via::Layout::Windows),
+                _ => {}
+            }
+        }
+    }
+    None
+}
+
 /// If --daemon or -d was passed, detach and run in background (Unix) or spawn a no-window process (Windows).
 fn maybe_daemonize() {
     let args: Vec<String> = std::env::args().collect();
@@ -130,34 +147,48 @@ fn main() {
 
     let _ = env_logger::try_init();
 
-    info!("KeySwitch starting ({} layout on connect)", {
-        #[cfg(target_os = "macos")]
-        {
-            "Mac"
-        }
-        #[cfg(target_os = "windows")]
-        {
-            "Windows"
-        }
-        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-        {
-            "unknown"
-        }
-    });
-
-    let mut api = match HidApi::new() {
-        Ok(a) => a,
-        Err(e) => {
-            log::error!("Failed to initialize HID API: {}", e);
-            std::process::exit(1);
-        }
-    };
+    let args: Vec<String> = std::env::args().collect();
+    let layout_override = parse_layout_override(&args);
 
     #[cfg(target_os = "macos")]
-    detect_macos::run(&mut api);
+    {
+        let layout = layout_override.unwrap_or(detect_macos::target_layout());
+        let layout_name = match layout {
+            via::Layout::Mac => "Mac",
+            via::Layout::Windows => "Windows (override)",
+        };
+        info!("KeySwitch starting ({} layout on connect)", layout_name);
+
+        let mut api = match HidApi::new() {
+            Ok(a) => a,
+            Err(e) => {
+                log::error!("Failed to initialize HID API: {}", e);
+                std::process::exit(1);
+            }
+        };
+
+        detect_macos::run(&mut api, layout);
+    }
 
     #[cfg(target_os = "windows")]
-    detect_windows::run(&mut api);
+    {
+        let layout = layout_override.unwrap_or(detect_windows::target_layout());
+        let layout_name = match layout {
+            via::Layout::Mac => "Mac (override)",
+            via::Layout::Windows => "Windows",
+        };
+        info!("KeySwitch starting ({} layout on connect)", layout_name);
+
+        let mut api = match HidApi::new() {
+            Ok(a) => a,
+            Err(e) => {
+                log::error!("Failed to initialize HID API: {}", e);
+                std::process::exit(1);
+            }
+        };
+
+        detect_windows::run(&mut api, layout);
+    }
 
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
@@ -168,7 +199,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::want_daemon;
+    use super::{parse_layout_override, want_daemon};
+    use crate::via::Layout;
 
     #[test]
     fn test_want_daemon() {
@@ -178,5 +210,39 @@ mod tests {
         assert!(want_daemon(&["keyswitch".into(), "-d".into()]));
         assert!(want_daemon(&["/path/to/keyswitch".into(), "-d".into()]));
         assert!(!want_daemon(&["keyswitch".into(), "--other".into()]));
+    }
+
+    #[test]
+    fn test_parse_layout_override() {
+        assert_eq!(parse_layout_override(&[]), None);
+        assert_eq!(parse_layout_override(&["keyswitch".into()]), None);
+        assert_eq!(
+            parse_layout_override(&["keyswitch".into(), "--layout".into(), "mac".into()]),
+            Some(Layout::Mac)
+        );
+        assert_eq!(
+            parse_layout_override(&["keyswitch".into(), "--layout".into(), "windows".into()]),
+            Some(Layout::Windows)
+        );
+        // Unknown value is ignored
+        assert_eq!(
+            parse_layout_override(&["keyswitch".into(), "--layout".into(), "linux".into()]),
+            None
+        );
+        // Missing value is ignored
+        assert_eq!(
+            parse_layout_override(&["keyswitch".into(), "--layout".into()]),
+            None
+        );
+        // Works alongside --daemon
+        assert_eq!(
+            parse_layout_override(&[
+                "keyswitch".into(),
+                "--daemon".into(),
+                "--layout".into(),
+                "windows".into()
+            ]),
+            Some(Layout::Windows)
+        );
     }
 }

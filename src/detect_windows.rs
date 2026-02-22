@@ -16,9 +16,8 @@ pub(crate) fn target_layout() -> Layout {
 
 /// Runs the detection loop: periodically enumerate Keychron Raw HID devices
 /// and apply the target layout to any newly connected device.
-pub fn run(api: &mut HidApi) -> ! {
+pub fn run(api: &mut HidApi, layout: Layout) -> ! {
     let mut applied_paths: HashSet<String> = HashSet::new();
-    let layout = target_layout();
     let interval = poll_interval();
 
     loop {
